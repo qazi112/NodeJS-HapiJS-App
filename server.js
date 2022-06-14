@@ -1,15 +1,20 @@
+require("dotenv").config()
+require("./db")
+
+// Package imports
 const Hapi = require("@hapi/hapi")
 const Path = require("path")
-const db = require("./db")
 const jwt = require("jsonwebtoken")
-
 const {v4: uuidv4} = require("uuid")
 
-require("dotenv").config()
+// Custom Auth scheme import
+const {scheme} = require("./auth_scheme")
 
-// importing models
+// Custom plugin import
+const {plugin} = require("./plugin")
+
+// Importing Mongoose Model 
 const Task = require("./models/tasks.js")
-
 
 // init() -> server initialize and start
 const init = async () => {
@@ -17,15 +22,21 @@ const init = async () => {
         port: 3000,
         host: 'localhost',
     })
-    
+
     // Register -> Plugins to be used
     await server.register(require("@hapi/inert"))
 
     // Register plugin, Vision to render views
     await server.register(require('@hapi/vision'))
     
+    await server.register(plugin)
+
     // Plugin for basic authentication
     await server.register(require("@hapi/basic"))
+
+    // adding custom authentication scheme to server
+    server.auth.scheme("jwt-scheme", scheme)
+    server.auth.strategy("my-jwt-auth", "jwt-scheme")
 
     // attaching handlebars the template engine
     // will render the views/templates
@@ -35,35 +46,19 @@ const init = async () => {
     })
 
     // ROUTES
-    server.route({
-        path : "/",
-        method: "GET",
-        handler: (request, h) => {
-            return h.response("Welcome")
-        }
-    })
 
-    server.route({
-        path : "/api/data/{id}",
-        method: "GET",
-        handler: (request, h) => {
-            const id = request.params.id
-            const data = {
-                id: id,
-                name: "Qazi"}
-            return data
-        }
-    })
-    
+    // Example of using custom plugin
+    // @GET /api/example/plugin/{name?} 
     server.route({
         method: "GET",
-        path: "/getdata",
+        path: "/api/example/plugin/{name?} ",
         handler: (request,h) => {
-
+            h.registerUser(request, h)
             return h.file("./public/data.json") 
         }
     })
-
+    // Find all tasks
+    // @GET "/api/tasks"
     server.route({
         method: "GET",
         path: "/api/tasks",
@@ -80,6 +75,9 @@ const init = async () => {
     
     })
   
+    // Create a task
+    // @POST "/api/tasks" 
+    // {title: "taskname", description: "newt task ..."}
     server.route({
         method: "POST",
         path: "/api/tasks",
@@ -95,7 +93,10 @@ const init = async () => {
         }
     })
 
-    // JWT Practice
+    // Get the JWT Token returned
+    // @POST "/login"
+    // {username: "name", password: "abcxyz123"}
+    // Returns {token: JWT Token signed }
     server.route({
         method: "POST",
         path: "/login",
@@ -112,17 +113,34 @@ const init = async () => {
             return h.response({token : access_token})
         }
     })
-
-    server.route({
-        path: "/users/data",
-        method: "GET",
-        handler: (request, h) => {
-            return request.auth
-        }
-    })
+    // Check authorized user
+    // @GET "/api/authorize-check"
+    // Used Custom Auth Scheme
+    // Check "./auth_scheme.js" file for schema
+    // And server.auth.scheme() and server.auth.strategy()
+    server.route([
+        {
+            method: "GET",
+            path: "/api/authorize-check",
+            handler: async (request, h) => {
+                const res = await request.auth.
+                console.log(res)
+                const response = h.response({data:request.auth.credentials})
+                    .header("Content-Type", "application/json")
+                    .code(200)
+                return response
+            },
+            options: {
+                // Auth strategy used for this route
+                // It has authenticate method to check the headers
+                auth: "my-jwt-auth"
+            }
+        },
+    ])
+    // Start the server
     await server.start();
     console.log(server.info.uri)
- 
+  
 }
 
 init()
