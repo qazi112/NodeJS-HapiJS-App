@@ -1,24 +1,31 @@
 const Hapi = require("@hapi/hapi")
-const Joi = require("joi")
 const Path = require("path")
 const db = require("./db")
+const jwt = require("jsonwebtoken")
+
+const {v4: uuidv4} = require("uuid")
+
+require("dotenv").config()
 
 // importing models
 const Task = require("./models/tasks.js")
+
 
 // init() -> server initialize and start
 const init = async () => {
     const server = Hapi.server({
         port: 3000,
         host: 'localhost',
-        
     })
-
+    
     // Register -> Plugins to be used
     await server.register(require("@hapi/inert"))
 
     // Register plugin, Vision to render views
     await server.register(require('@hapi/vision'))
+    
+    // Plugin for basic authentication
+    await server.register(require("@hapi/basic"))
 
     // attaching handlebars the template engine
     // will render the views/templates
@@ -32,10 +39,7 @@ const init = async () => {
         path : "/",
         method: "GET",
         handler: (request, h) => {
-             
-            return h.view("index", {
-                numbers : [1, 2, 3]
-            })
+            return h.response("Welcome")
         }
     })
 
@@ -88,6 +92,32 @@ const init = async () => {
             } catch (error) {
                 return h.response(error)
             }
+        }
+    })
+
+    // JWT Practice
+    server.route({
+        method: "POST",
+        path: "/login",
+        handler: (request, h) => {
+            const {username} = request.payload
+            console.log(username)
+            const access_token = jwt.sign({
+                id: uuidv4(),
+                username: username
+            }, process.env.ACCESS_KEY)
+            
+                console.log(jwt.JsonWebTokenError)
+            
+            return h.response({token : access_token})
+        }
+    })
+
+    server.route({
+        path: "/users/data",
+        method: "GET",
+        handler: (request, h) => {
+            return request.auth
         }
     })
     await server.start();
