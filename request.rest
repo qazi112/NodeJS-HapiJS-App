@@ -1,4 +1,5 @@
-GET http://localhost:3000/
+POST http://localhost:3000/
+
 
 ###
 
@@ -11,4 +12,6 @@ Content-Type: application/json
 
 ###
 
-GET http://localhost:3000/users/data
+GET http://localhost:3000/api/jwt
+Authorization: BEARER eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjI5MmVkMGY4LWU4MDAtNDVkMS1hNThjLWM1ODIxMTNiMGI3MiIsInVzZXJuYW1lIjoiYXJzYWxhbiIsImlhdCI6MTY1NTIyNTA0NH0.roYEeQ4PHdtvEqvyURd0anxGqcETeOHJJwP2yCT-sr0
+
