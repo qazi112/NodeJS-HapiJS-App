@@ -51,7 +51,7 @@ const init = async () => {
     // @GET /api/example/plugin/{name?} 
     server.route({
         method: "GET",
-        path: "/api/example/plugin/{name?} ",
+        path: "/api/example/plugin/{name?}",
         handler: (request,h) => {
             h.registerUser(request, h)
             return h.file("./public/data.json") 
@@ -106,7 +106,7 @@ const init = async () => {
             const access_token = jwt.sign({
                 id: uuidv4(),
                 username: username
-            }, process.env.ACCESS_KEY)
+            }, process.env.ACCESS_KEY,{expiresIn: "2m"})
             
                 console.log(jwt.JsonWebTokenError)
             
